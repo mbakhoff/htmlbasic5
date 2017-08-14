@@ -62,7 +62,7 @@ Now that we have a secure connection to the server, we can start sending sensiti
 We want to add passwords to our users so they can log in.
 
 Storing passwords requires some special considerations.
-Whatever we do, there's a chance that someone hacks our server and steals data from our database.
+Whatever we do, there's a chance that someone will hack our server and steal data from our database.
 We should ensure that the attacker cannot log into our users' accounts even after reading our database.
 Also, users often reuse their passwords on different websites - the attacker shouldn't be able to use the stolen data to hijack our users' accounts on other sites.
 This effectively means we can't store the passwords in our database.
@@ -80,7 +80,7 @@ We will now discuss two main issues with hashing.
 
 ### Rainbow tables
 
-The attackers objective is to discover the original input for given a hash value as fast as possible.
+The attackers objective is to discover the original input for a given hash value as fast as possible.
 This should be impossible as hashing is a one-way function.
 However, nothing is stopping the attacker from building a database that contains the hash of every possible alphanumeric input.
 The english alphabet has 26 letters, so for a password of length 8, there are only 26^8 possible passwords.
@@ -133,7 +133,7 @@ Update your forum application to support storing passwords:
 ## HTTP cookies
 
 Now that we have passwords, it's time to create a login page.
-The user will enter the email address and password.
+The user will enter the email address and the password.
 The server can check whether the password is right.
 But what happens next - how can the server "remember" that the user is logged in?
 
@@ -179,12 +179,12 @@ public void cookieReader(HttpServletRequest request) {
 ```
 
 So how can we implement login with cookies?
-One option is to set a cookie with name `current-user` and set the value to the email of the logged in user when the users logs in with a correct password.
+One option is to set a cookie with the name `current-user` and set the value to the email of the logged in user when the users logs in with a correct password.
 This way the user's browser would send the `current-user` cookie with each following request and the server would know which logged in user is contacting it.
-However, there's a problem where an attacker could use the browser's developer tools to add the cookie manually and "become logged in" as any user he wants.
+However, there's a problem: an attacker could use the browser's developer tools to add the cookie manually and "become logged in" as any user he wants.
 
 A better solution is to use login tokens.
-When an user logs in, generate a random long string (30 characters?) and set a cookie with the name `login-token` (or whatever you want).
+When an user logs in, generate a random long string (30 characters?) and store it in a cookie.
 Additionally, store the login token in the database, so that it's clear which user the token belongs to.
 When the user sends a request to the server, then the server can match the token to the logged in user.
 However, an attacker would have a very low probability of guessing a valid token.
@@ -217,18 +217,17 @@ Currently when an user creates a new forum posts, an email address field is used
 Remove the email field from the new post form.
 Set the post's author to the current logged in user.
 Hide the form when no user is logged in.
-Beware that an attacker could still create and submit the form using developer tools - this should fail.
 
 ## CSRF attacks and mitigation
 
 Our login system with the login tokens is already quite secure, but there is still one major security issue we need to take care of.
 Remember that when a server sets a cookie, the cookie is included in all future requests to the server that set the cookie.
-There is no restriction that the request must come from a web page that was served by that same server.
+There is no restriction that the request must come from a web page served by that same server.
 
 Consider this scenario:
 * the user logs in to our forum and the login token is stored in a cookie
 * the user leaves our site and visits another site (e.g. *evil.com*)
-* *evil.com* contains a button that's labeled *Get free stuff*, but this is implemented like this:
+* *evil.com* contains a button that's labeled *Get free stuff*, implemented like this:
   ```html
   <form action="https://your-forum-address/threads" method="post">
     <input type="hidden" name="threadName" value="check out my cool new program at evil.com/virus.exe" />
@@ -237,9 +236,9 @@ Consider this scenario:
   ```
 * the user clicks the free stuff button and submits the form to your forum site.
   because the request is sent to your server, the login token cookie is included.
-  the new evil forum thread is created with the current logged in user as author.
+  the new evil forum thread is created with the current logged in user as the author.
 
-Such attack is called a *Cross Site Request Forgery (CSRF)*.
+This attack is called a *Cross Site Request Forgery (CSRF)*.
 The issue is that we cannot prevent the browser from including the cookie when sending request from other sites, but the cookie is enough to authenticate the user.
 The solution to the CSRF problem is to change our code so that the login token is not enough to accept the POST request from the user.
 
@@ -249,8 +248,8 @@ This is how it works in detail:
 * We add a new hidden field to **all** our html forms that contains the csrf token
 * When we receive a POST request, then we check if the form contains the same csrf token that is in the cookie.
 
-The solution works because the browser will ensure that each site will only read and change it's own cookies.
-Therefore, *evil.com* doesn't know the csrf token in our cookie and cannot include it in its form.
+The solution works because the browser will ensure that each site can only read and change its own cookies.
+Therefore, *evil.com* cannot read the csrf token in our cookie and cannot include it in its form.
 
 ### Request filters
 
@@ -284,7 +283,7 @@ Find the `app.services.CsrfFilter` class and add the following:
 * check if we already have a csrf token generated and stored in a cookie
 * generate and store the csrf token if needed
 * check if the request needs csrf checking: all requests except *GET* and *HEAD* should contain the csrf token.
-* check if the request contains the csrf token and it's the same as stored in the cookie.
+* check if the request contains the csrf token and it's the same as the one stored in the cookie.
   if the check fails, throw an exception.
 * store the csrf token in the request attributes using `request.setAttribute(...)`.
   this way you can access it in the thymeleaf templates using `${attributeName}`
@@ -302,9 +301,9 @@ Only a few minor tweaks remain.
 
 ### Cross Site Scripting (XSS) attacks
 
-The forum allows the users to post any content and then shows in in the threads.
+The forum allows the users to post any content and then shows it in the threads.
 There's nothing stopping the users from posting bad stuff, such as scripts.
-For example, an attacker could post the following code snippet as a post:
+For example, an attacker could post the following code snippet:
 ```html
 <script>document.location.assign('http://evil.com');</script>
 ```
@@ -314,7 +313,7 @@ Luckily thymeleaf already escapes our html (replaces `<` with `&lt;`, `>` with `
 This causes the script tag to be rendered as text, not added as a html element.
 To add an extra safety net agains such scripting attacks, we will add the CSP header to our application.
 
-The [CSP (Content Security Policy) header](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) tells the browser where it it allowed to load scripts and other files from.
+The [CSP (Content Security Policy) header](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) tells the browser where it is allowed to load scripts and other files from.
 We will use CSP to tell the browser to only allow loading css files from our own server and block all javascript (we're not using it anyway).
 
 Create a new filter class `SecurityHeaderFilter` and have it add the following header to all responses that our server sends:
@@ -333,15 +332,15 @@ Change the `SecurityHeaderFilter` and add this header to all responses:
 
 ### X-Frame-Options
 
-It is possible to place other pages into your own page using the `<iframe>` tag.
+It is possible to show other pages inside your own page using the `<iframe>` tag (like a small embedded browser window).
 One annoying attack is the *clickjacking* attack.
 The attacker will place your page in his page so that your page fills the entire screen.
 Next he will place an invisible layer on your page, but cover up some input fields with his own fields.
 
 For example, the attacker can show the victim your login page, but the username and password fields are covered up with identical looking fields.
-The user is easily tricked to enter his login information.
+The user is easily tricked into entering his login information in the fake fields.
 
-The fix is to use the [X-Frame-Options header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options) that tells the browser "please don't let this page be placed in a iframe".
+The fix is to use the [X-Frame-Options header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options) that tells the browser "please don't let this page be placed in an iframe".
 Add it to your `SecurityHeaderFilter`:
 * header name "X-Frame-Options"
 * header value "DENY"
