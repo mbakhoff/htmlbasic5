@@ -313,7 +313,7 @@ Luckily thymeleaf already escapes our html (replaces `<` with `&lt;`, `>` with `
 This causes the script tag to be rendered as text, not added as a html element.
 To add an extra safety net agains such scripting attacks, we will add the CSP header to our application.
 
-The [CSP (Content Security Policy) header](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) tells the browser where it is allowed to load scripts and other files from.
+The CSP (Content Security Policy) header ([overview](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP), [reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy)) tells the browser where it is allowed to load scripts and other files from.
 We will use CSP to tell the browser to only allow loading css files from our own server and block all javascript (we're not using it anyway).
 
 Create a new filter class `SecurityHeaderFilter` and have it add the following header to all responses that our server sends:
